@@ -26,8 +26,8 @@
     <div class=container id=test>
 	<input type="text" id="msg_input" style="width:200px;" placeholder="双葉杏" />
   	<button onclick="query();">検索</button>
-  	<div id="msg"></div>
 	<div id="graph"></div>
+  	<div id="msg"></div>
   	<script src="/socket.io/socket.io.js"></script>
   	<script type="text/javascript">
 	var graph = {nodes:
@@ -36,15 +36,18 @@
 		links:
 			[
 			]};
+	var word2index = [];
     	// 1.イベントとコールバックの定義
     	var socketio = io.connect('http://133.130.113.188:3000');
-    	socketio.on("publish", function (data) { addMessage(data.value); });
+    	socketio.on("publish", function (data) { updateGraph(data.value); });
 
 	function resetGraph() {
 		graph.nodes=[];
 		graph.links=[];
+		word2index =[];
 	}
 
+	// 検索ボタンを叩いたらnode側にクエリを投げる
     	function query() {
       		var textInput = document.getElementById('msg_input');
       		var msg = textInput.value;
@@ -53,19 +56,31 @@
       		textInput.value = '';
     	}
 	
-    	function addMessage (obj) {
-		graph.nodes.push({word:obj[0].src,score:1.0});
+    	
+	function updateGraph (obj) {
+		var srcIdx = $.inArray(obj[0].src, word2index);
+		if ( srcIdx < 0 ) {
+			graph.nodes.push({word:obj[0].src});
+			word2index.push(obj[0].src);
+			srcIdx = word2index.length-1;
+		}
 		for(var i = 0 ; i < obj.length ; ++i) {
 			// for debug
       			var domMeg = document.createElement('div');
 			domMeg.innerHTML = obj[i].src + '->' + obj[i].dst + ":" + obj[i].score;
       			msgArea.appendChild(domMeg);
 			// construct graph
-			graph.nodes.push({word:obj[i].dst});
-			graph.links.push({source:0,target:i+1,value:obj[i].score});
+			var targetIdx = $.inArray(obj[i].dst, word2index);
+			if ( targetIdx < 0 ) {
+				graph.nodes.push({word:obj[i].dst});
+				word2index.push(obj[i].dst);
+				targetIdx = word2index.length-1;
+			}
+			graph.links.push({source:srcIdx,target:targetIdx,value:obj[i].score});
 		}
 		redraw();
     	}
+
 
     	// 3.開始処理
     	var msgArea = document.getElementById("msg");
@@ -75,7 +90,7 @@
 		    .attr("height", h);
 	var force = d3.layout.force()
 		      .charge(-240)
-		      .linkDistance(function(d){return 60.0/d.value;})
+		      .linkDistance(function(d){return 80.0/d.value;})
 	              .size([w,h]);
 	
 	force.on("tick", function() {
@@ -92,7 +107,7 @@
 
 		force.nodes(graph.nodes)
 		     .links(graph.links)
-		     .linkDistance(function(d){return 40.0/d.value;})
+		     .linkDistance(function(d){return 60.0/d.value;})
 		     .start();
 
 		var link = svg.selectAll("line.link")
@@ -106,7 +121,6 @@
 		     .attr("y1", function(d) { return d.source.y;})
 		     .attr("x2", function(d) { return d.target.x;})
 		     .attr("y2", function(d) { return d.target.y;});
-
 
 		var nodes = svg.selectAll(".node")
 		   .data(graph.nodes);
@@ -123,11 +137,12 @@
 		     .style("stroke-width", "2px")
 		     .style("stroke","red")
 		     .style("fill","white")
-		     .style("r",10)
+		     .style("r",15)
 		     .call(force.drag)
 		     .attr("cx",function(d){ return d.x; })
 		     .attr("cy",function(d){ return d.y; })
-		     .append("title").text(function(d){return d.word;});
+		     .on("click", function(d,i){socketio.emit("publish",{value:d.word});})
+		     .append("title").text(function(d){return d.word;})
 
 		//text処理
 		var texts = svg.selectAll(".txt")
