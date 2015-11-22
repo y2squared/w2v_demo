@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/bootstrap.min.css' />
+  </head>
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="brand" href="#">word2vecのお遊び</a>
+        </div>
+      </div>
+    </div>
+    <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script src="/javascripts/bootstrap.min.js" ></script>
+    <script src="/javascripts/d3.js"></script>
+    <div class="container">
+      <div class="hero-unit">    
+        <h1><%= title %></h1>
+        <p>Welcome to <%= title %></p>
+	<br/>
+	<br/>
+      </div>
+    </div>
+    <div class=container id=test>
+	<input type="text" id="msg_input" style="width:200px;" placeholder="双葉杏" />
+  	<button onclick="query();">検索</button>
+  	<div id="msg"></div>
+	<div id="graph"></div>
+  	<script src="/socket.io/socket.io.js"></script>
+  	<script type="text/javascript">
+	var graph = {nodes:
+			[
+			],
+		links:
+			[
+			]};
+    	// 1.イベントとコールバックの定義
+    	var socketio = io.connect('http://133.130.113.188:3000');
+    	socketio.on("publish", function (data) { addMessage(data.value); });
+
+	function resetGraph() {
+		graph.nodes=[];
+		graph.links=[];
+	}
+
+    	function query() {
+      		var textInput = document.getElementById('msg_input');
+      		var msg = textInput.value;
+		resetGraph();
+      		socketio.emit("publish", {value: msg});
+      		textInput.value = '';
+    	}
+	
+    	function addMessage (obj) {
+		graph.nodes.push({word:obj[0].src,score:1.0});
+		for(var i = 0 ; i < obj.length ; ++i) {
+			// for debug
+      			var domMeg = document.createElement('div');
+			domMeg.innerHTML = obj[i].src + '->' + obj[i].dst + ":" + obj[i].score;
+      			msgArea.appendChild(domMeg);
+			// construct graph
+			graph.nodes.push({word:obj[i].dst});
+			graph.links.push({source:0,target:i+1,value:obj[i].score});
+		}
+		redraw();
+    	}
+
+    	// 3.開始処理
+    	var msgArea = document.getElementById("msg");
+	var w = 800, h = 600;
+	var svg = d3.select("#graph").append("svg")
+		    .attr("width", w)
+		    .attr("height", h);
+	var force = d3.layout.force()
+		      .charge(-240)
+		      .linkDistance(function(d){return 60.0/d.value;})
+	              .size([w,h]);
+	
+	force.on("tick", function() {
+    		link.attr("x1", function(d) { return d.source.x; })
+    		    .attr("y1", function(d) { return d.source.y; })
+    		    .attr("x2", function(d) { return d.target.x; })
+    		    .attr("y2", function(d) { return d.target.y; });
+
+    		node.attr("cx", function(d) { return d.x; })
+    		    .attr("cy", function(d) { return d.y; });
+	});
+	
+	function redraw() {
+
+		force.nodes(graph.nodes)
+		     .links(graph.links)
+		     .linkDistance(function(d){return 40.0/d.value;})
+		     .start();
+
+		var link = svg.selectAll("line.link")
+	           .data(graph.links);
+
+		//新規リンクへの処理
+		link.enter().insert("svg:line",".node")
+		     .attr("class","link")
+		     .style({stroke:"#999999", "stroke-width": "2px"})
+		     .attr("x1", function(d) { return d.source.x;})
+		     .attr("y1", function(d) { return d.source.y;})
+		     .attr("x2", function(d) { return d.target.x;})
+		     .attr("y2", function(d) { return d.target.y;});
+
+
+		var nodes = svg.selectAll(".node")
+		   .data(graph.nodes);
+
+		//既存ノードの更新
+		svg.selectAll(".node")
+		   .selectAll("title")
+	           .data(graph.nodes)
+		   .text(function(d){return d.word;})
+
+		//新規ノードへの処理
+		nodes.enter().append("circle")
+		     .attr("class","node")
+		     .style("stroke-width", "2px")
+		     .style("stroke","red")
+		     .style("fill","white")
+		     .style("r",10)
+		     .call(force.drag)
+		     .attr("cx",function(d){ return d.x; })
+		     .attr("cy",function(d){ return d.y; })
+		     .append("title").text(function(d){return d.word;});
+
+		//text処理
+		var texts = svg.selectAll(".txt")
+			       .data(graph.nodes);
+		
+		texts.text(function(d){return d.word;})
+		     .call(force.drag);
+
+		texts.enter().append("text")
+		     .attr("class","txt")
+                     .attr("text-anchor","middle")
+                     .style("font", "6pt sans-serif")
+                     .style("fill", "#000")
+                     .text(function(d){return d.word;})
+                     .call(force.drag);
+
+		//不要ノードの削除
+		link.exit().remove();
+		nodes.exit().remove();
+		texts.exit().remove();
+
+		force.on("tick",function() {
+			link
+			    .attr("x1", function(d){return d.source.x;})		
+			    .attr("y1", function(d){return d.source.y;})		
+			    .attr("x2", function(d){return d.target.x;})		
+			    .attr("y2", function(d){return d.target.y;});
+	    		nodes
+    			    .attr("cx", function(d) {return d.x;})			
+    			    .attr("cy", function(d) {return d.y;});
+    			texts
+			    .attr("x", function(d){return d.x;})
+    			    .attr("y", function(d){return d.y;});			    
+		});
+
+	}
+
+  	</script>
+	<!--<script src="/javascripts/graph.js"></script>-->
+	<span class=span4>
+	word2vecで遊んでみました。
+	</span>
+    </div>
+  </body>
+</html>
