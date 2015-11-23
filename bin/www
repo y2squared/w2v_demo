@@ -41,20 +41,15 @@ io.sockets.on("connection",function(socket){
 	socket.on("publish", function (data) {
 		var query = {'src':data.value};
 		console.log(query);
-		similarword.find({src:data.value},'src dst score',{'sort':{score:-1},limit:20},function(err,similarwords){
+		similarword.find({src:data.value},'src dst score',{'sort':{score:-1},limit:10},function(err,similarwords){
 			if (err) {
-				socket.emit("publish", {value:data.value+" not found "});
+				socket.emit("publish", {value:"",error:"data not found" });
 			}else {
 				res = {'parent':data.value,'nodes':[],'links':[]}
-				/*for(var i = 0 ; i < similarwords.length ; ++i) {
-					res.nodes.push({'word':similarwords[i].dst});
-				}*/
 				socket.emit("publish", {value:similarwords});
 				console.log(similarwords);
 			}
 		});
-		//socket.emit("publish",{value:{src:"テスト",dst:"結果",score:0.55}});
-		//io.sockets.emit("publish", {value:data.value});
 	});
 
 	socket.on("disconnect", function() {
