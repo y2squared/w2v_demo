@@ -8,7 +8,7 @@
     <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container">
-          <a class="brand" href="#">word2vecのお遊び</a>
+          <a class="brand" href="#">word2vecのデモ</a>
         </div>
       </div>
     </div>
@@ -18,14 +18,17 @@
     <div class="container">
       <div class="hero-unit">    
         <h1><%= title %></h1>
-        <p>Welcome to <%= title %></p>
-	<br/>
-	<br/>
+	word2vecのデモです。<br/>
+	ニコニコ動画のアイマス関連の動画のタグとタイトル情報を学習して類似ワードを検索し,<br/>
+	検索ワードに入れた語の類似ワードを１０件とってきてグラフに表示します.<br/>
+	単語間に走っている線が短いほど意味的に類似しているものです.<br/>
+	グラフの丸をクリックすることでもその単語を検索して類似ワードを検索することができます.
       </div>
     </div>
     <div class=container id=test>
 	<input type="text" id="msg_input" style="width:200px;" placeholder="双葉杏" />
   	<button onclick="query();">検索</button>
+	<button onclick="resetGraph();">グラフのリセット</button>
 	<div id="graph"></div>
   	<div id="msg"></div>
   	<script src="/socket.io/socket.io.js"></script>
@@ -37,53 +40,55 @@
 			[
 			]};
 	var word2index = [];
-    	// 1.イベントとコールバックの定義
+    	// イベントとコールバックの定義
     	var socketio = io.connect('http://133.130.113.188:3000');
-    	socketio.on("publish", function (data) { updateGraph(data.value); });
+    	socketio.on("publish", function (data) { 
+			if(!data.error)updateGraph(data.value); 
+			});
 
 	function resetGraph() {
 		graph.nodes=[];
 		graph.links=[];
 		word2index =[];
+		redraw();
 	}
 
 	// 検索ボタンを叩いたらnode側にクエリを投げる
     	function query() {
       		var textInput = document.getElementById('msg_input');
       		var msg = textInput.value;
-		resetGraph();
+		msg = msg.replace(/ /g, "_");
       		socketio.emit("publish", {value: msg});
       		textInput.value = '';
     	}
 	
-    	
+    	// 返ってきた類似ワードをグラフに追加
 	function updateGraph (obj) {
+		// クエリが何番目のノードか調べる
 		var srcIdx = $.inArray(obj[0].src, word2index);
-		if ( srcIdx < 0 ) {
-			graph.nodes.push({word:obj[0].src});
+		if ( srcIdx < 0 ) { 
+			graph.nodes.push({word:obj[0].src,link:0});
 			word2index.push(obj[0].src);
 			srcIdx = word2index.length-1;
 		}
 		for(var i = 0 ; i < obj.length ; ++i) {
-			// for debug
-      			var domMeg = document.createElement('div');
-			domMeg.innerHTML = obj[i].src + '->' + obj[i].dst + ":" + obj[i].score;
-      			msgArea.appendChild(domMeg);
-			// construct graph
+			// クエリの結果ワードが既にないかをチェック
 			var targetIdx = $.inArray(obj[i].dst, word2index);
-			if ( targetIdx < 0 ) {
-				graph.nodes.push({word:obj[i].dst});
+			if ( targetIdx < 0 ) { // なければ追加する
+				graph.nodes.push({word:obj[i].dst,link:0});
 				word2index.push(obj[i].dst);
 				targetIdx = word2index.length-1;
 			}
 			graph.links.push({source:srcIdx,target:targetIdx,value:obj[i].score});
+			graph.nodes[srcIdx].link++;
+			graph.nodes[targetIdx].link++;
 		}
-		redraw();
+		// 新たな頂点・リンクを加えて再描画
+		redraw(); 
     	}
 
 
-    	// 3.開始処理
-    	var msgArea = document.getElementById("msg");
+    	// 開始処理
 	var w = 800, h = 600;
 	var svg = d3.select("#graph").append("svg")
 		    .attr("width", w)
@@ -127,6 +132,10 @@
 
 		//既存ノードの更新
 		svg.selectAll(".node")
+		   .style("stroke", function(d){
+				   if(d.link == 1) return "red";
+				   else if (d.link < 10) return "green";
+				   else return "blue";})
 		   .selectAll("title")
 	           .data(graph.nodes)
 		   .text(function(d){return d.word;})
@@ -135,7 +144,10 @@
 		nodes.enter().append("circle")
 		     .attr("class","node")
 		     .style("stroke-width", "2px")
-		     .style("stroke","red")
+		     .style("stroke",function(d){
+				     if(d.link < 5) return "red"; 
+				     else if(d.link < 10) return "green";
+				     else  return "blue";})
 		     .style("fill","white")
 		     .style("r",15)
 		     .call(force.drag)
@@ -181,7 +193,6 @@
 	}
 
   	</script>
-	<!--<script src="/javascripts/graph.js"></script>-->
 	<span class=span4>
 	word2vecで遊んでみました。
 	</span>
