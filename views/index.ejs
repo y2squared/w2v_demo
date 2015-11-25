@@ -15,20 +15,24 @@
     <script src="http://code.jquery.com/jquery.min.js"></script>
     <script src="/javascripts/bootstrap.min.js" ></script>
     <script src="/javascripts/d3.js"></script>
+    <script type="text/javascript" src="http://gabelerner.github.io/canvg/rgbcolor.js"></script> 
+    <script type="text/javascript" src="http://gabelerner.github.io/canvg/StackBlur.js"></script>
+    <script type="text/javascript" src="http://gabelerner.github.io/canvg/canvg.js"></script>  
     <div class="container">
       <div class="hero-unit">    
-        <h1><%= title %></h1>
-	word2vecのデモです。<br/>
+	word2vecで遊んでみました。<br/>
 	ニコニコ動画のアイマス関連の動画のタグとタイトル情報を学習して類似ワードを検索し,<br/>
 	検索ワードに入れた語の類似ワードを１０件とってきてグラフに表示します.<br/>
-	単語間に走っている線が短いほど意味的に類似しているものです.<br/>
-	グラフの丸をクリックすることでもその単語を検索して類似ワードを検索することができます.
+	単語間に走っている線が短いほど類似しているものです.<br/>
+	グラフの丸をクリックすることでもその単語を検索して類似ワードを検索することができます.<br/>
+	あまり関係なさそうな単語が類似ワードとして出たらごめんなさい...
       </div>
     </div>
     <div class=container id=test>
-	<input type="text" id="msg_input" style="width:200px;" placeholder="双葉杏" />
-  	<button onclick="query();">検索</button>
-	<button onclick="resetGraph();">グラフのリセット</button>
+	<center>
+    	<input type="text" id="msg_input" style="width:400px;" placeholder="お気に入りのキャラクターやタグを入れてみてください" />
+  	<button class="btn" onclick="query();">検索</button>
+	<button class="btn" onclick="resetGraph();">グラフのリセット</button>
 	<div id="graph"></div>
   	<div id="msg"></div>
   	<script src="/socket.io/socket.io.js"></script>
@@ -133,28 +137,31 @@
 		//既存ノードの更新
 		svg.selectAll(".node")
 		   .style("stroke", function(d){
-				   if(d.link == 1) return "red";
-				   else if (d.link < 10) return "green";
-				   else return "blue";})
-		   .selectAll("title")
-	           .data(graph.nodes)
-		   .text(function(d){return d.word;})
+				   if(d.link == 1) return "#ff0000";
+				   else if (d.link < 10) return "#00ff00";
+				   else return "#0000ff";})
+		   .style("stroke-width", 2)
+		   .style("fill","white");
+		   //.selectAll("title")
+	           //.data(graph.nodes)
+		   //.text(function(d){return d.word;})
 
 		//新規ノードへの処理
 		nodes.enter().append("circle")
 		     .attr("class","node")
-		     .style("stroke-width", "2px")
-		     .style("stroke",function(d){
-				     if(d.link < 5) return "red"; 
-				     else if(d.link < 10) return "green";
-				     else  return "blue";})
+		     .style("stroke-width", 2)
+		     .style("stroke-miterlimit", 1)
+		     .style("stroke", function(d){
+				     if(d.link < 5) return "#ff0000"; 
+				     else if(d.link < 10) return "#00ff00";
+				     else  return "#0000ff";})
 		     .style("fill","white")
 		     .style("r",15)
 		     .call(force.drag)
 		     .attr("cx",function(d){ return d.x; })
 		     .attr("cy",function(d){ return d.y; })
-		     .on("click", function(d,i){socketio.emit("publish",{value:d.word});})
-		     .append("title").text(function(d){return d.word;})
+		     .on("click", function(d,i){socketio.emit("publish",{value:d.word});});
+		     //.append("title").text(function(d){return d.word;})
 
 		//text処理
 		var texts = svg.selectAll(".txt")
@@ -176,6 +183,7 @@
 		nodes.exit().remove();
 		texts.exit().remove();
 
+
 		force.on("tick",function() {
 			link
 			    .attr("x1", function(d){return d.source.x;})		
@@ -191,11 +199,22 @@
 		});
 
 	}
+	function tweetGraph() {
+		//現状のSVGをcanvasに描画
+	        var svgText = document.getElementById('graph').innerHTML; 
+		console.log(svgText);
+		canvg('canvas', svgText);
+	}
 
   	</script>
-	<span class=span4>
-	word2vecで遊んでみました。
-	</span>
+	<!--
+        <textarea id="tweetmsg" rows="4" cols="40"> #ニコマスタグ解析 http://bit.ly/1NbwGA6</textarea><br/>
+	<button class="btn" onclick="tweetGraph();"> tweet</button>
+	<div id="canvasarea">
+		<canvas id="canvas"></canvas>
+	</div>
+	-->
+	</center>
     </div>
   </body>
 </html>
