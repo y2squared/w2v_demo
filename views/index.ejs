@@ -2,31 +2,41 @@
 <html>
   <head>
     <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/bootstrap.min.css' />
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="/stylesheets/bootstrap.min.css">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script src="/javascripts/bootstrap.min.js"></script>
+    <script src="/javascripts/d3.min.js"></script>
+    <script type="text/javascript" src="http://gabelerner.github.io/canvg/rgbcolor.js"></script> 
+    <script type="text/javascript" src="http://gabelerner.github.io/canvg/StackBlur.js"></script>
+    <script type="text/javascript" src="http://gabelerner.github.io/canvg/canvg.js"></script>  
   </head>
   <body>
     <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container">
-          <a class="brand" href="#">word2vecのデモ</a>
+          <a class="brand" href="#">ニコマス動画のタグ&タイトルで遊んでみた</a>
+	  <div class="nav navbar-nab navbar-right">
+		  <% if (user)  { %> 
+		  <img src="<%= user.photos[0].value %>"></img>
+		  <% }else { %>
+		  <a class="brand" href="http://app.y2squared.me/twitter/auth">ツイッターでログイン<br/>(作成した画像をツイートできるようになります)</a>
+		  <% } %>
+	  </div>
         </div>
       </div>
     </div>
-    <script src="http://code.jquery.com/jquery.min.js"></script>
-    <script src="/javascripts/bootstrap.min.js" ></script>
-    <script src="/javascripts/d3.js"></script>
-    <script type="text/javascript" src="http://gabelerner.github.io/canvg/rgbcolor.js"></script> 
-    <script type="text/javascript" src="http://gabelerner.github.io/canvg/StackBlur.js"></script>
-    <script type="text/javascript" src="http://gabelerner.github.io/canvg/canvg.js"></script>  
     <div class="container">
-      <div class="hero-unit">    
-	word2vecで遊んでみました。<br/>
+      <center>
+      <div class="hero-unit">
+	<br/><br/><br/>  
 	ニコニコ動画のアイマス関連の動画のタグとタイトル情報を学習して類似ワードを検索し,<br/>
-	検索ワードに入れた語の類似ワードを１０件とってきてグラフに表示します.<br/>
-	単語間に走っている線が短いほど類似しているものです.<br/>
-	グラフの丸をクリックすることでもその単語を検索して類似ワードを検索することができます.<br/>
-	あまり関係なさそうな単語が類似ワードとして出たらごめんなさい...
+	検索ワードに入れた語の類似ワードを１０個とってきてグラフに表示します.<br/>
+	単語間の線が短いほど類似しているものです.グラフの丸をクリックすることでも類似ワードを検索することができます.<br/>
+	あまり関係なさそうな単語が類似ワードとして出たらごめんなさい...<br/>
       </div>
+      </center>
     </div>
     <div class=container id=test>
 	<center>
@@ -45,10 +55,10 @@
 			]};
 	var word2index = [];
     	// イベントとコールバックの定義
-    	var socketio = io.connect('http://133.130.113.188:3000');
+    	var socketio = io.connect('http://app.y2squared.me:8000');
     	socketio.on("publish", function (data) { 
 			if(!data.error)updateGraph(data.value); 
-			});
+	});
 
 	function resetGraph() {
 		graph.nodes=[];
@@ -68,6 +78,7 @@
 	
     	// 返ってきた類似ワードをグラフに追加
 	function updateGraph (obj) {
+		if ( ! obj[0].src ) return;
 		// クエリが何番目のノードか調べる
 		var srcIdx = $.inArray(obj[0].src, word2index);
 		if ( srcIdx < 0 ) { 
@@ -93,14 +104,22 @@
 
 
     	// 開始処理
-	var w = 800, h = 600;
+	var w = 700, h = 400;
 	var svg = d3.select("#graph").append("svg")
 		    .attr("width", w)
 		    .attr("height", h);
 	var force = d3.layout.force()
 		      .charge(-240)
-		      .linkDistance(function(d){return 80.0/d.value;})
+		      .linkDistance(function(d){return 60.0/d.value;})
 	              .size([w,h]);
+
+	//背景を白で塗りつぶしておく
+	svg.append("rect")
+	   .attr("x",0)
+	   .attr("y",0)
+	   .attr("width",w)
+	   .attr("height",h)
+	   .attr("fill","white");
 	
 	force.on("tick", function() {
     		link.attr("x1", function(d) { return d.source.x; })
@@ -137,31 +156,28 @@
 		//既存ノードの更新
 		svg.selectAll(".node")
 		   .style("stroke", function(d){
-				   if(d.link == 1) return "#ff0000";
+				   if(d.link == 5) return "#ff0000";
 				   else if (d.link < 10) return "#00ff00";
 				   else return "#0000ff";})
-		   .style("stroke-width", 2)
+		   .style("stroke-width", "2px")
 		   .style("fill","white");
-		   //.selectAll("title")
-	           //.data(graph.nodes)
-		   //.text(function(d){return d.word;})
 
 		//新規ノードへの処理
 		nodes.enter().append("circle")
 		     .attr("class","node")
-		     .style("stroke-width", 2)
-		     .style("stroke-miterlimit", 1)
+		     .style("stroke-width", "2px")
+		     //.style("stroke-miterlimit", 1)
 		     .style("stroke", function(d){
 				     if(d.link < 5) return "#ff0000"; 
 				     else if(d.link < 10) return "#00ff00";
 				     else  return "#0000ff";})
 		     .style("fill","white")
-		     .style("r",15)
+		     .style("opacity",1.0)
 		     .call(force.drag)
 		     .attr("cx",function(d){ return d.x; })
 		     .attr("cy",function(d){ return d.y; })
+		     .attr("r",15)
 		     .on("click", function(d,i){socketio.emit("publish",{value:d.word});});
-		     //.append("title").text(function(d){return d.word;})
 
 		//text処理
 		var texts = svg.selectAll(".txt")
@@ -200,20 +216,23 @@
 
 	}
 	function tweetGraph() {
-		//現状のSVGをcanvasに描画
-	        var svgText = document.getElementById('graph').innerHTML; 
-		console.log(svgText);
+		//現状のSVGをcanvasにcanvgを用いて描画
+	        var svgText = document.getElementById('graph').innerHTML;	
 		canvg('canvas', svgText);
-	}
+		var canvas = document.getElementById('canvas');
+		var tweetText = document.getElementById('tweetmsg').innerHTML;
+		var imgdata = canvas.toDataURL().replace(/^.+,/,"");
+		$.post('twitter/tweet',
+				{tweet:tweetText, img:imgdata});
 
   	</script>
-	<!--
-        <textarea id="tweetmsg" rows="4" cols="40"> #ニコマスタグ解析 http://bit.ly/1NbwGA6</textarea><br/>
+	<% if (user) { %> 
+        <textarea id="tweetmsg" rows="4" cols="40" on> #ニコマスタググラフ http://bit.ly/1XT9k3L</textarea><br/>
 	<button class="btn" onclick="tweetGraph();"> tweet</button>
 	<div id="canvasarea">
-		<canvas id="canvas"></canvas>
+		<canvas id="canvas" class="hidden"></canvas>
 	</div>
-	-->
+	<% } %>
 	</center>
     </div>
   </body>

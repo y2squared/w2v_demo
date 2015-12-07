@@ -4,11 +4,11 @@
  * Module dependencies.
  */
 
-var app = require('../app');
-var debug = require('debug')('w2v:server');
-var http = require('http');
-var similarword = require('../public/javascripts/similarword.js');
-var socketio = require('socket.io');
+const app = require('../app');
+const debug = require('debug')('w2v:server');
+const http = require('http');
+const similarword = require('../public/javascripts/similarword.js');
+const socketio = require('socket.io');
 
 /**
  * Get port from environment and store in Express.
@@ -21,13 +21,13 @@ app.set('port', port);
  * Create HTTP server.
  */
 
-var server = http.createServer(app);
+const server = http.createServer(app);
 
 /**
  * Listen on provided port, on all network interfaces.
  */
 server.listen(port);
-var io = socketio.listen(server);
+const io = socketio.listen(server);
 server.on('error', onError);
 server.on('listening', onListening);
 
@@ -41,11 +41,11 @@ io.sockets.on("connection",function(socket){
 	socket.on("publish", function (data) {
 		var query = {'src':data.value};
 		console.log(query);
+		// word2vecの結果データをスコア順に最大１０件取得して返す
 		similarword.find({src:data.value},'src dst score',{'sort':{score:-1},limit:10},function(err,similarwords){
 			if (err) {
 				socket.emit("publish", {value:"",error:"data not found" });
 			}else {
-				res = {'parent':data.value,'nodes':[],'links':[]}
 				socket.emit("publish", {value:similarwords});
 				console.log(similarwords);
 			}
@@ -55,6 +55,7 @@ io.sockets.on("connection",function(socket){
 	socket.on("disconnect", function() {
 		io.sockets.emit("publish", {value:"disconnected"});
 	});
+
 });
 
 /**
