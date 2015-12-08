@@ -13,32 +13,31 @@
     <script type="text/javascript" src="http://gabelerner.github.io/canvg/canvg.js"></script>  
   </head>
   <body>
-    <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="brand" href="#">ニコマス動画のタグ&タイトルで遊んでみた</a>
-	  <div class="nav navbar-nab navbar-right">
-		  <% if (user)  { %> 
-		  <img src="<%= user.photos[0].value %>"></img>
-		  <% }else { %>
-		  <a class="brand" href="http://app.y2squared.me/twitter/auth">ツイッターでログイン<br/>(作成した画像をツイートできるようになります)</a>
-		  <% } %>
-	  </div>
-        </div>
-      </div>
-    </div>
+    <nav class="navbar navbar-inverse navbar-top">
+       <div class="navbar-inner">
+	  <div class="container">
+          <a class="navbar-brand" href="#">ニコマス動画類似タグ検索</a>
+	  <% if (user)  { %> 
+	  <img class="navbar-inner navbar-right" src="<%= user.photos[0].value %>"></img>
+  	  <% }else { %>
+	  <a class="mavbar-inner navbar-link navbar-right" href="http://app.y2squared.me/twitter/auth">ツイッターでログイン<br/>(作成した画像をツイートできるようになります)</a>
+	  <% } %>
+  	  </div>
+       </div>
+    </nav>
     <div class="container">
-      <center>
       <div class="hero-unit">
-	<br/><br/><br/>  
-	ニコニコ動画のアイマス関連の動画のタグとタイトル情報を学習して類似ワードを検索し,<br/>
-	検索ワードに入れた語の類似ワードを１０個とってきてグラフに表示します.<br/>
-	単語間の線が短いほど類似しているものです.グラフの丸をクリックすることでも類似ワードを検索することができます.<br/>
-	あまり関係なさそうな単語が類似ワードとして出たらごめんなさい...<br/>
+	ニコマス動画のタグとタイトル情報からword2vecという技術を使って類似語の学習をさせました。
+	<ul>
+		<li>検索ボックスに入れたワードの類似語ベスト10を下に表示します。円をクリックするとその語の類似語も追加で表示します</li>
+		<li>英数字・記号は全て半角で入力してください</li>
+		<li>単語間の線が短いほど類似しているものです。</li>
+		<li>あまり関係なさそうな単語が類似ワードとして出たらごめんなさい...</li>
+		<li>何かコメントなどありましたらTwitter(@y2squared)までお願いします</li>
+	</ul>
       </div>
-      </center>
     </div>
-    <div class=container id=test>
+    <div class="container"id="test">
 	<center>
     	<input type="text" id="msg_input" style="width:400px;" placeholder="お気に入りのキャラクターやタグを入れてみてください" />
   	<button class="btn" onclick="query();">検索</button>
@@ -156,7 +155,7 @@
 		//既存ノードの更新
 		svg.selectAll(".node")
 		   .style("stroke", function(d){
-				   if(d.link == 5) return "#ff0000";
+				   if(d.link < 3) return "#ff0000";
 				   else if (d.link < 10) return "#00ff00";
 				   else return "#0000ff";})
 		   .style("stroke-width", "2px")
@@ -168,7 +167,7 @@
 		     .style("stroke-width", "2px")
 		     //.style("stroke-miterlimit", 1)
 		     .style("stroke", function(d){
-				     if(d.link < 5) return "#ff0000"; 
+				     if(d.link < 3) return "#ff0000"; 
 				     else if(d.link < 10) return "#00ff00";
 				     else  return "#0000ff";})
 		     .style("fill","white")
@@ -224,11 +223,12 @@
 		var imgdata = canvas.toDataURL().replace(/^.+,/,"");
 		$.post('twitter/tweet',
 				{tweet:tweetText, img:imgdata});
+	}
 
   	</script>
 	<% if (user) { %> 
         <textarea id="tweetmsg" rows="4" cols="40" on> #ニコマスタググラフ http://bit.ly/1XT9k3L</textarea><br/>
-	<button class="btn" onclick="tweetGraph();"> tweet</button>
+	<button class="btn" style="background-color:#2222f0"  onclick="tweetGraph();"> tweet</button>
 	<div id="canvasarea">
 		<canvas id="canvas" class="hidden"></canvas>
 	</div>
