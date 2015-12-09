@@ -16,32 +16,23 @@
     <nav class="navbar navbar-inverse navbar-top">
        <div class="navbar-inner">
 	  <div class="container">
-          <a class="navbar-brand" href="#">ニコマス動画類似タグ検索</a>
+          <a class="navbar-brand" href="#">ニコマス類似語検索</a>
 	  <% if (user)  { %> 
 	  <img class="navbar-inner navbar-right" src="<%= user.photos[0].value %>"></img>
   	  <% }else { %>
-	  <a class="mavbar-inner navbar-link navbar-right" href="http://app.y2squared.me/twitter/auth">ツイッターでログイン<br/>(作成した画像をツイートできるようになります)</a>
+	  <a class="mavbar-inner navbar-link navbar-right" href="http://app.y2squared.me/twitter/auth">ツイッターでログイン<br/>(作成したグラフをツイートできるようになります)</a>
 	  <% } %>
   	  </div>
        </div>
     </nav>
-    <div class="container">
-      <div class="hero-unit">
-	ニコマス動画のタグとタイトル情報からword2vecという技術を使って類似語の学習をさせました。
-	<ul>
-		<li>検索ボックスに入れたワードの類似語ベスト10を下に表示します。円をクリックするとその語の類似語も追加で表示します</li>
-		<li>英数字・記号は全て半角で入力してください</li>
-		<li>単語間の線が短いほど類似しているものです。</li>
-		<li>あまり関係なさそうな単語が類似ワードとして出たらごめんなさい...</li>
-		<li>何かコメントなどありましたらTwitter(@y2squared)までお願いします</li>
-	</ul>
-      </div>
-    </div>
     <div class="container"id="test">
 	<center>
+          <p>
+	ニコニコ動画のアイマス関連の動画のタグとタイトル情報からword2vecという技術を使って類似語の学習をさせました。
+          </p>
     	<input type="text" id="msg_input" style="width:400px;" placeholder="お気に入りのキャラクターやタグを入れてみてください" />
-  	<button class="btn" onclick="query();">検索</button>
-	<button class="btn" onclick="resetGraph();">グラフのリセット</button>
+  	<button class="btn btn-primary" onclick="query();">検索</button>
+	<button class="btn btn-primary" onclick="resetGraph();">グラフのリセット</button>
 	<div id="graph"></div>
   	<div id="msg"></div>
   	<script src="/socket.io/socket.io.js"></script>
@@ -103,7 +94,7 @@
 
 
     	// 開始処理
-	var w = 700, h = 400;
+	var w = 720, h = 400;
 	var svg = d3.select("#graph").append("svg")
 		    .attr("width", w)
 		    .attr("height", h);
@@ -219,21 +210,48 @@
 	        var svgText = document.getElementById('graph').innerHTML;	
 		canvg('canvas', svgText);
 		var canvas = document.getElementById('canvas');
-		var tweetText = document.getElementById('tweetmsg').innerHTML;
+		var tweetText = $('#tweetmsg').val();
 		var imgdata = canvas.toDataURL().replace(/^.+,/,"");
 		$.post('twitter/tweet',
-				{tweet:tweetText, img:imgdata});
+				{tweet:tweetText, img:imgdata}
+              );
 	}
+
+    function displayRestwordCount(){
+        var rest = 140 - 28 - $('#tweetmsg').val().length;//140 - 画像URLの分 - 入力文字数
+        $('#restword').text("残り"+rest+"文字");
+    }
 
   	</script>
 	<% if (user) { %> 
-        <textarea id="tweetmsg" rows="4" cols="40" on> #ニコマスタググラフ http://bit.ly/1XT9k3L</textarea><br/>
-	<button class="btn" style="background-color:#2222f0"  onclick="tweetGraph();"> tweet</button>
-	<div id="canvasarea">
-		<canvas id="canvas" class="hidden"></canvas>
-	</div>
+        <textarea id="tweetmsg" onkeyup="displayRestwordCount();" rows="4" cols="40" on>#ニコマス類似語検索 http://bit.ly/1XT9k3L</textarea><br/>
+        <div id="restword"></div>
+	    <button class="btn btn-primary" onclick="tweetGraph();"> tweet</button>
+	    <div id="canvasarea">
+		    <canvas id="canvas" class="hidden"></canvas>
+	    </div>
 	<% } %>
 	</center>
+    <div class="panel">
+      <div class="panel-group" id="abstract">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h4 class="panel-title">
+               使い方 
+            </h4>
+          </div>
+          <div class="panel-body">
+          <ul>
+            <li>検索ボックスに入れたワードの類似語ベスト10を下に表示します。</li>
+            <li>円をクリックするとその語の類似語も追加で表示します。文字をドラッグすることで多少グラフの形も変えられます</li>
+		    <li>英数字・記号は全て半角で入力してください</li>
+		    <li>単語間の線が短いほど類似しているものです。</li>
+		    <li>あまり関係なさそうな単語が類似語として出たてきたらごめんなさい...</li>
+		    <li>何かご意見などありましたらTwitter(@y2squared)までお願いします</li>
+	      </ul>
+          </div>
+        </div>
+      </div>
     </div>
   </body>
 </html>
