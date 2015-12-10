@@ -89,7 +89,10 @@ app.get('/twitter/authenticationError', function(req, res){
 app.post('/twitter/tweet', function(req,res) {
 	const Twitter = require('twitter');
 	const tweet = req.body.tweet;
-        const client = new Twitter({
+    if(! req.session.passport.user.token || ! req.session.passport.user.tokenSecret){
+        res.redirect('back');
+    }
+    const client = new Twitter({
         	consumer_key: process.env.TWITTER_CONSUMER_KEY,
 		consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
 		access_token_key: req.session.passport.user.token,
@@ -99,13 +102,13 @@ app.post('/twitter/tweet', function(req,res) {
 	const img = base64.decode(req.body.img);
 	client.post('media/upload', {media:img}, function(error,media,response){
 		if(!error){
-			console.log("media tweet done")
 			const media_id = media.media_id_string;
 			client.post('statuses/update', {status:tweet, media_ids: media_id}, function(error,tweet,response){
 				if(error){
 					console.log(util.inspect(error));
 				}
-				res.redirect('/nicomas-tag-analysis');
+                res.statusCode=200;
+                return res.end();
 			});
 		}else {
 			console.log(util.inspect(error));
