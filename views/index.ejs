@@ -209,23 +209,31 @@
 		//現状のSVGをcanvasにcanvgを用いて描画
 	        var svgText = document.getElementById('graph').innerHTML;	
 		canvg('canvas', svgText);
+        if (28+$('#tweetmsg').val().length > 140) {
+            $('#tweetstatus').text('文字数が多すぎるため投稿しませんでした');
+            return;
+        }
 		var canvas = document.getElementById('canvas');
 		var tweetText = $('#tweetmsg').val();
 		var imgdata = canvas.toDataURL().replace(/^.+,/,"");
+        $('#tweetstatus').text('投稿中');
 		$.post('twitter/tweet',
-				{tweet:tweetText, img:imgdata}
+				{tweet:tweetText, img:imgdata},
+                function(data){
+                    $('#tweetstatus').text('投稿しました');
+                }
               );
 	}
 
     function displayRestwordCount(){
-        var rest = 140 - 28 - $('#tweetmsg').val().length;//140 - 画像URLの分 - 入力文字数
-        $('#restword').text("残り"+rest+"文字");
+        var rest = 140 - 28 - $('#tweetmsg').val().length;//140 - 入力文字数
+        $('#tweetstatus').text("残り"+rest+"文字");
     }
 
   	</script>
 	<% if (user) { %> 
         <textarea id="tweetmsg" onkeyup="displayRestwordCount();" rows="4" cols="40" on>#ニコマス類似語検索 http://bit.ly/1XT9k3L</textarea><br/>
-        <div id="restword"></div>
+        <div id="tweetstatus">status</div>
 	    <button class="btn btn-primary" onclick="tweetGraph();"> tweet</button>
 	    <div id="canvasarea">
 		    <canvas id="canvas" class="hidden"></canvas>
